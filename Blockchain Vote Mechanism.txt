@@ -1,0 +1,82 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract VotingWithPause {
+    address public owner;
+    bool public isPaused;
+
+    struct Candidate {
+        string name;
+        uint voteCount;
+    }
+
+    mapping(uint => Candidate) public candidates;
+    mapping(address => bool) public hasVoted;
+
+    uint public candidateCount;
+    uint public totalVotes;
+
+    event CandidateAdded(uint candidateId, string name);
+    event Voted(address voter, uint candidateId);
+    event Paused();
+    event Resumed();
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can call this function");
+        _;
+    }
+
+    modifier whenNotPaused() {
+        require(!isPaused, "Contract is paused");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+        isPaused = false;
+    }
+
+    // Add a candidate to the election
+    function addCandidate(string memory _name) public onlyOwner {
+        candidates[candidateCount] = Candidate(_name, 0);
+        emit CandidateAdded(candidateCount, _name);
+        candidateCount++;
+    }
+
+    // Vote for a candidate by sending Ether
+    function vote(uint _candidateId) public payable whenNotPaused {
+        require(msg.value > 0, "You must send some Ether to vote");
+        require(_candidateId < candidateCount, "Candidate does not exist");
+        require(!hasVoted[msg.sender], "You have already voted");
+
+        hasVoted[msg.sender] = true;
+        candidates[_candidateId].voteCount++;
+        totalVotes++;
+        emit Voted(msg.sender, _candidateId);
+    }
+
+    // Pause the contract (emergency stop)
+    function pause() public onlyOwner {
+        require(!isPaused, "Contract is already paused");
+        isPaused = true;
+        emit Paused();
+    }
+
+    // Resume the contract after pausing
+    function resume() public onlyOwner {
+        require(isPaused, "Contract is not paused");
+        isPaused = false;
+        emit Resumed();
+    }
+
+    // Get the current vote count for a candidate
+    function getCandidateVoteCount(uint _candidateId) public view returns (uint) {
+        require(_candidateId < candidateCount, "Candidate does not exist");
+        return candidates[_candidateId].voteCount;
+    }
+
+    // Withdraw funds collected from voting (only by the owner)
+    function withdrawFunds() public onlyOwner {
+        payable(owner).transfer(address(this).balance);
+    }
+}
