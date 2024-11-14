@@ -2,81 +2,86 @@
 pragma solidity ^0.8.0;
 
 contract VotingWithPause {
-    address public owner;
-    bool public isPaused;
+    address public owner; // Address of the contract owner (creator)
+    bool public isPaused; // Flag indicating whether the contract is paused
 
+    // Structure to represent a Candidate
     struct Candidate {
-        string name;
-        uint voteCount;
+        string name; // Candidate's name
+        uint voteCount; // Number of votes the candidate has received
     }
 
+    // Mapping to store candidates by ID
     mapping(uint => Candidate) public candidates;
+    // Mapping to track whether an address has voted
     mapping(address => bool) public hasVoted;
 
-    uint public candidateCount;
-    uint public totalVotes;
+    uint public candidateCount; // Number of candidates in the election
+    uint public totalVotes; // Total number of votes cast
 
+    // Events to log actions in the contract
     event CandidateAdded(uint candidateId, string name);
     event Voted(address voter, uint candidateId);
     event Paused();
     event Resumed();
 
+    // Modifier to ensure only the owner can call certain functions
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this function");
         _;
     }
 
+    // Modifier to ensure actions can only happen when the contract is not paused
     modifier whenNotPaused() {
         require(!isPaused, "Contract is paused");
         _;
     }
 
+    // Constructor to initialize the contract with the owner's address and the paused state
     constructor() {
-        owner = msg.sender;
-        isPaused = false;
+        owner = msg.sender; // Set the owner as the address that deploys the contract
+        isPaused = false; // Initially, the contract is not paused
     }
 
-    // Add a candidate to the election
+    // Function to add a new candidate to the election (only callable by the owner)
     function addCandidate(string memory _name) public onlyOwner {
-        candidates[candidateCount] = Candidate(_name, 0);
-        emit CandidateAdded(candidateCount, _name);
-        candidateCount++;
+        candidates[candidateCount] = Candidate(_name, 0); // Add candidate to mapping
+        emit CandidateAdded(candidateCount, _name); // Emit event for added candidate
+        candidateCount++; // Increment the total candidate count
     }
 
-    // Vote for a candidate by sending Ether
+    // Function to cast a vote for a candidate by sending Ether (voting requires Ether payment)
     function vote(uint _candidateId) public payable whenNotPaused {
-        require(msg.value > 0, "You must send some Ether to vote");
-        require(_candidateId < candidateCount, "Candidate does not exist");
-        require(!hasVoted[msg.sender], "You have already voted");
+        require(msg.value > 0, "You must send some Ether to vote"); // Ensure the voter sends Ether
+        require(_candidateId < candidateCount, "Candidate does not exist"); // Ensure valid candidate ID
+        require(!hasVoted[msg.sender], "You have already voted"); // Ensure the voter hasn't voted already
 
-        hasVoted[msg.sender] = true;
-        candidates[_candidateId].voteCount++;
-        totalVotes++;
-        emit Voted(msg.sender, _candidateId);
+        hasVoted[msg.sender] = true; // Mark the sender as having voted
+        candidates[_candidateId].voteCount++; // Increment the vote count for the selected candidate
+        totalVotes++; // Increment the total vote count
+        emit Voted(msg.sender, _candidateId); // Emit event for casting a vote
     }
 
-    // Pause the contract (emergency stop)
+    // Function to pause the contract (can be used to stop voting in an emergency)
     function pause() public onlyOwner {
-        require(!isPaused, "Contract is already paused");
-        isPaused = true;
-        emit Paused();
+        require(!isPaused, "Contract is already paused"); // Ensure the contract is not already paused
+        isPaused = true; // Set the contract as paused
+        emit Paused(); // Emit event indicating the contract is paused
     }
 
-    // Resume the contract after pausing
+    // Function to resume the contract after it has been paused
     function resume() public onlyOwner {
-        require(isPaused, "Contract is not paused");
-        isPaused = false;
-        emit Resumed();
+        require(isPaused, "Contract is not paused"); // Ensure the contract is paused before resuming
+        isPaused = false; // Set the contract as not paused
+        emit Resumed(); // Emit event indicating the contract has resumed
     }
 
-    // Get the current vote count for a candidate
+    // Function to get the current vote count for a specific candidate
     function getCandidateVoteCount(uint _candidateId) public view returns (uint) {
-        require(_candidateId < candidateCount, "Candidate does not exist");
-        return candidates[_candidateId].voteCount;
+        require(_candidateId < candidateCount, "Candidate does not exist"); // Ensure valid candidate ID
+        return candidates[_candidateId].voteCount; // Return the vote count for the candidate
     }
 
-    // Withdraw funds collected from voting (only by the owner)
+    // Function to withdraw all Ether collected from voting (only callable by the owner)
     function withdrawFunds() public onlyOwner {
-        payable(owner).transfer(address(this).balance);
-    }
-}
+        payable(owner).transfer(address(this).balance); // Trans
