@@ -1,4 +1,8 @@
 This Solidity contract, VotingWithPause, implements a basic voting system with emergency pausing functionality. It allows an owner (typically the contract creator or administrator) to add candidates, and users to vote for candidates by sending Ether. The contract includes mechanisms to pause and resume the voting process, enabling the owner to halt all voting activity in case of emergencies.
+Pause and Resume Voting: The contract can be paused to stop voting and resumed later. This is useful for emergencies or maintenance.
+Ether-based Voting: Each vote is cast by sending Ether to the contract, ensuring that each vote is tied to a financial transaction.
+Owner Controls: The owner has exclusive access to add candidates, pause/resume the contract, and withdraw the collected Ether.
+Vote Tracking: Keeps track of votes for each candidate and ensures that a user can only vote once.
 Features:
 
     Pause and Resume Voting: The contract can be paused to stop voting and resumed later. This is useful for emergencies or maintenance.
